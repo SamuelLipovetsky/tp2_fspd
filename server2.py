@@ -2,16 +2,16 @@ import grpc
 import sys
 import integration_pb2
 import integration_pb2_grpc
-
+import threading
 from concurrent import futures
 
 
 class IntegrationServicer(integration_pb2_grpc.IntegrationServicer):
-    def __init__(self):
+    def __init__(self, stop_event):
         self.directories = {}
+        self._stop_event = stop_event
 
     def Register(self, request, context):
-
         server_name = request.server_name
         server_port = request.server_port
         keys = request.keys
@@ -34,22 +34,22 @@ class IntegrationServicer(integration_pb2_grpc.IntegrationServicer):
             return response
         response.server_name = "ND"
         response.server_port = 0
-
         return response
 
     def Terminate(self, request, context):
-
+        self._stop_event.set()
         return integration_pb2.TerminateResponse_(num_keys=len(self.directories))
 
 
 def run_server(port):
+    stop_event = threading.Event()
     server = grpc.server(futures.ThreadPoolExecutor())
     integration_pb2_grpc.add_IntegrationServicer_to_server(
-        IntegrationServicer(), server)
+        IntegrationServicer(stop_event), server)
     server.add_insecure_port('[::]:' + str(port))
     server.start()
-
-    server.wait_for_termination()
+    stop_event.wait()
+    server.stop(grace=1)
 
 
 if __name__ == '__main__':

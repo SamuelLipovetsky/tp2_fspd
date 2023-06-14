@@ -7,13 +7,14 @@ import directory_pb2_grpc
 import integration_pb2
 import integration_pb2_grpc
 import sys
+import threading
 
 class DirectoryServicer(directory_pb2_grpc.DirectoryServicer,integration_pb2_grpc.IntegrationServicer):
-    def __init__(self,port):
+    def __init__(self,port,stop_event):
         self.directory = {}
         self.name =  socket.getfqdn()
         self.port = port
-        
+        self._stop_event = stop_event
 
     def Insert(self, request, context):
         key = request.key
@@ -47,20 +48,23 @@ class DirectoryServicer(directory_pb2_grpc.DirectoryServicer,integration_pb2_grp
 
     def Terminate(self, request, context):
         num_keys = len(self.directory)
+        self._stop_event.set()
         return directory_pb2.TerminateResponse(num_keys=num_keys)
 
 def serve(port):
+    stop_event = threading.Event()
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     directory_pb2_grpc.add_DirectoryServicer_to_server(
-        DirectoryServicer(port), server)
+        DirectoryServicer(port,stop_event), server)
     server.add_insecure_port('[::]:'+str(port))
     server.start()
-
-    try:
-        while True:
-            time.sleep(100000)
-    except KeyboardInterrupt:
-        server.stop(0)
+    stop_event.wait()
+    server.stop(grace=1)
+    # try:
+    #     while True:
+    #         time.sleep(100000)
+    # except KeyboardInterrupt:
+    #     server.stop(0)
 
 
 if __name__ == '__main__':

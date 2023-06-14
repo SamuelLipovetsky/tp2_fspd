@@ -33,7 +33,7 @@ def run_client(server_address):
 
             elif command == "T":
                 response = stub_i.Terminate(integration_pb2.TerminateRequest_())
-                print(f"Terminating. Total keys registered: {response.num_keys}")
+                print(response.num_keys)
                 break
 
     except KeyboardInterrupt:
