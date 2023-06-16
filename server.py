@@ -60,11 +60,7 @@ def serve(port):
     server.start()
     stop_event.wait()
     server.stop(grace=1)
-    # try:
-    #     while True:
-    #         time.sleep(100000)
-    # except KeyboardInterrupt:
-    #     server.stop(0)
+
 
 
 if __name__ == '__main__':

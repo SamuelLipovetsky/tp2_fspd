@@ -1,29 +1,21 @@
-# Variable definitions
-PROTO_GEN_DIR = path/to/generated/stubs
-PROTO_FILE = example.proto
-STUB_FILE = example_pb2.py
-PYTHON_FILES = my_script.py
 
-# Default target
-all: build
+stubs:
+    protoc -I=<path_to_integration_proto> --python_out=. /integration.proto
+    protoc -I=<path_to_directory_proto> --python_out=. /directory.proto
 
-# Generate gRPC stubs
-$(PROTO_GEN_DIR)/$(STUB_FILE): $(PROTO_FILE)
-	python -m grpc_tools.protoc \
-		--proto_path=. \
-		--python_out=$(PROTO_GEN_DIR) \
-		--grpc_python_out=$(PROTO_GEN_DIR) \
-		$(PROTO_FILE)
+run_cli_dir: stubs
+    python3 client.py $(arg)
 
-# Build the project
-build: $(PROTO_GEN_DIR)/$(STUB_FILE)
+run_serv_dir: stubs
+    python3 server.py $(arg)
 
-# Run the Python script
-run: $(PROTO_GEN_DIR)/$(STUB_FILE)
-	python $(PYTHON_FILES)
+run_cli_int: stubs
+    python3 client2.py $(arg)
 
-# Clean generated files
+run_serv_int: stubs
+    python3 server2.py $(arg)
+
 clean:
-	rm -rf $(PROTO_GEN_DIR)/*.py
-
-
+    # Remove intermediate files
+    rm -f *.pyc
+    rm -f *_pb2.py
