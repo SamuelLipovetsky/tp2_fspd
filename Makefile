@@ -17,5 +17,5 @@ run_serv_int: stubs
 
 clean:
     # Remove intermediate files
-    rm -f *.pyc
+    rm -f *_grpc.py
     rm -f *_pb2.py
